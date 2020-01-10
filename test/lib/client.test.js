@@ -24,6 +24,23 @@ describe("Client", () => {
       expect(client.host).toBe("https://api.traitify.com");
     });
 
+    describe("anyIE", () => {
+      afterEach(() => {
+        delete window.document.documentMode;
+      });
+
+      it("should be true", () => {
+        window.document.documentMode = "11";
+        client = new Client();
+
+        expect(client.anyIE).toBe(true);
+      });
+
+      it("should be false", () => {
+        expect(client.anyIE).toBe(false);
+      });
+    });
+
     describe("oldIE", () => {
       afterEach(() => {
         delete global.XDomainRequest;
@@ -169,6 +186,7 @@ describe("Client", () => {
         XDomainRequest.mockClear();
         Object.values(xdrMocks).forEach((mock) => mock.mockClear());
 
+        client.anyIE = true;
         client.oldIE = true;
       });
 
@@ -364,6 +382,33 @@ describe("Client", () => {
           const response = client.ajax("GET", "/profiles");
 
           return expect(response).rejects.toThrow(SyntaxError);
+        });
+      });
+
+      describe("with anyIE", () => {
+        beforeEach(() => {
+          client.anyIE = true;
+        });
+
+        it("includes reset cache", () => {
+          client.ajax("GET", "/profiles", {locale_key: "en-us"});
+          const url = xhrMocks.open.mock.calls[0][1];
+
+          expect(url).toContain("reset_cache=");
+        });
+
+        it("includes params", () => {
+          client.ajax("GET", "/profiles", {locale_key: "en-us"});
+          const url = xhrMocks.open.mock.calls[0][1];
+
+          expect(url).toContain("locale_key=en-us");
+        });
+
+        it("doesn't require params", () => {
+          client.ajax("GET", "/profiles");
+          const url = xhrMocks.open.mock.calls[0][1];
+
+          expect(url).toContain("/profiles?");
         });
       });
     });

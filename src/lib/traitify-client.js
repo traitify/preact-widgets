@@ -4,6 +4,7 @@ export default class TraitifyClient {
   constructor() {
     this.host = "https://api.traitify.com";
     this.version = "v1";
+    this.anyIE = !!window.document.documentMode;
     this.oldIE = typeof XDomainRequest !== "undefined";
   }
   online() { return navigator.onLine; }
@@ -68,12 +69,13 @@ export default class TraitifyClient {
       return this.handlePromise("graphql", xhr, params);
     }
 
-    if(this.oldIE) {
+    if(this.anyIE) {
       url += url.indexOf("?") === -1 ? "?" : "&";
-      url += queryString.stringify({
-        authorization: this.publicKey,
-        reset_cache: (new Date()).getTime()
-      });
+      url += queryString.stringify({reset_cache: (new Date()).getTime()});
+    }
+
+    if(this.oldIE) {
+      url += queryString.stringify({authorization: this.publicKey});
       xhr = new XDomainRequest();
       xhr.open(method, url);
     } else {
